@@ -8,7 +8,7 @@
 #include "aht20.h"
 
 #define AHT20_ADDRESS 0x70
-
+uint8_t readBuffer[6] ={0};
 void AHT20_Init(){
 	uint8_t readBuffer;
 	HAL_Delay(40);
@@ -20,16 +20,17 @@ void AHT20_Init(){
 }
 
 
-void AHT20_Read(float* Temperature, float* Humidity){
-	uint8_t sendBuffer[3] = {0xAC, 0x33 , 0x00};
-	uint8_t readBuffer[6] ;
 
+void AHT20_Measure(){
+	static uint8_t sendBuffer[3] = {0xAC,0x33,0x00};
+	HAL_I2C_Master_Transmit_IT(&hi2c1,AHT20_ADDRESS,sendBuffer,3);
+}
 
-	HAL_I2C_Master_Transmit(&hi2c1,AHT20_ADDRESS,sendBuffer,3,HAL_MAX_DELAY);
-	HAL_Delay(75);
-	HAL_I2C_Master_Receive(&hi2c1,AHT20_ADDRESS,readBuffer,6,HAL_MAX_DELAY);
+void AHT20_Get(){
+	HAL_I2C_Master_Receive_IT(&hi2c1,AHT20_ADDRESS,readBuffer,6);
+}
 
-
+void AHT20_Analysis(float *Temperature, float * Humidity){
 	if((readBuffer[0]&0x80)==0x00){
 		uint32_t data=0;
 		data = ((uint32_t)readBuffer[3]>>4)+((uint32_t)readBuffer[2]<<4)+((uint32_t)readBuffer[1]<<12);

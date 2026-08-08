@@ -18,17 +18,17 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "dma.h"
 #include "i2c.h"
 #include "usart.h"
 #include "gpio.h"
-
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
-/* USER CODE END Includes */
-#include <stdio.h>
 #include "aht20.h"
+#include <stdio.h>
 #include <string.h>
+/* USER CODE END Includes */
+
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
 
@@ -47,7 +47,13 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
+// 0:初始狀態 發送測量命令
+// 1 : 正在發送測量命令
+// 2 : 測量命令發送完成，等待75ms後讀取AHT20數據
+// 3 : 讀取中
+// 4 : 讀取完成
 
+ uint8_t aht20State=0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -90,6 +96,7 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_I2C1_Init();
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
@@ -103,12 +110,29 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    /* USER CODE END WHILE */
-	  AHT20_Read(&temperature,&humidity);
-	  sprintf(message,"溫度: %.1f 度C, 濕度:%.1f %%\r\n",temperature,humidity);
-	  HAL_UART_Transmit(&huart2, (uint8_t*)message, strlen(message), HAL_MAX_DELAY);
-	  HAL_Delay(1000);
 
+	  if(aht20State==0){
+		  AHT20_Measure();
+		  aht20State=1;
+	  }else if(aht20State==2){
+		  HAL_Delay(75);
+		  AHT20_Get();
+		  aht20State=3;
+	  }else if(aht20State==4){
+		  AHT20_Analysis(&temperature,&humidity);
+		  sprintf(message,"溫度: %.1f 度C, 濕度:%.1f %%\r\n",temperature,humidity);
+		  HAL_UART_Transmit(&huart2, (uint8_t*)message, strlen(message), HAL_MAX_DELAY);
+		  HAL_Delay(1000);
+		  aht20State=0;
+	  }
+
+
+
+    /* USER CODE END WHILE */
+//	  AHT20_Read(&temperature,&humidity);
+//	  sprintf(message,"溫度: %.1f 度C, 濕度:%.1f %%\r\n",temperature,humidity);
+//	  HAL_UART_Transmit(&huart2, (uint8_t*)message, strlen(message), HAL_MAX_DELAY);
+//	  HAL_Delay(1000);
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
