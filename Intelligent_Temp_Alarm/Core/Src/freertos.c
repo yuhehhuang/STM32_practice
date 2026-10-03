@@ -216,6 +216,11 @@ void StartOLEDTask(void *argument)
 
       OLED_PrintString(0,0,tempStr,&font16x16,OLED_COLOR_NORMAL);
       OLED_PrintString(0,18,humStr,&font16x16,OLED_COLOR_NORMAL);
+      //讓圖片顯示變久，強化RTOS的重要性。
+      for (int i=0;i<10000000;++i)
+      {
+
+      }
       OLED_ShowFrame();
 
       osSemaphoreRelease(I2C_MutexHandle);
